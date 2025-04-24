@@ -28,8 +28,8 @@ SHADOW_COLOR = (50, 50, 50)  # 阴影颜色（深灰）
 STROKE_COLOR = (100, 100, 100)  # 描边颜色（中灰）
 
 # 艺术字文本
-TEXT_EN = "ANTPOOL \nLaunches SHIC Merged-mining"
-TEXT_CN = "ANTPOOL\n上线 SHIC 合并挖矿"  # 请确认中文文本
+TEXT_EN = "ANTPOOL\nLaunches SHIC Merged-mining"
+TEXT_CN = "ANTPOOL\n上线 SHIC 合并挖矿"  # 已确认中文文本
 
 # 判断是否为中文文本
 def is_chinese(text):
@@ -46,10 +46,14 @@ def get_edge_average_color(image):
     avg_color = np.mean([top_edge, bottom_edge, left_edge, right_edge], axis=0).astype(int)
     return tuple(avg_color)
 
-# 添加艺术字（自适应字体大小，加粗和立体效果）
+# 添加艺术字（自适应字体大小，加粗和立体效果，增加行间距）
 def add_art_text(image, text, font_path=None, font_size=60, text_color=TEXT_COLOR, shadow_color=SHADOW_COLOR, stroke_color=STROKE_COLOR):
     draw = ImageDraw.Draw(image)
-    target_width = image.width * 3 / 4  # 文字宽度为画面的 3/4
+    target_width = image.width * 4 / 5  # 文字宽度为画面的 4/5
+
+    # 增加中文字体大小
+    if is_chinese(text):
+        font_size = 70  # 中文字体初始大小更大
 
     # 根据文本语言选择字体路径
     if is_chinese(text):
@@ -120,33 +124,35 @@ def add_art_text(image, text, font_path=None, font_size=60, text_color=TEXT_COLO
 
     print(f"最终字体大小: {font_size} 像素，文本宽度: {max_width} 像素")
 
+    # 增加行间距
+    line_spacing = 15  # 额外行间距（像素）
+    total_height_with_spacing = total_height + line_spacing * (len(lines) - 1)
+
     x = (image.width - max_width) // 2
-    y = (image.height - total_height) // 2
+    y = (image.height - total_height_with_spacing) // 2
 
     # 绘制阴影（立体效果）
     shadow_offset = 3  # 阴影偏移像素
+    y_shadow = y
     for i, line in enumerate(lines):
-        draw.text((x + shadow_offset, y + shadow_offset), line, fill=shadow_color, font=font)
-        y += line_heights[i]
+        draw.text((x + shadow_offset, y_shadow + shadow_offset), line, fill=shadow_color, font=font)
+        y_shadow += line_heights[i] + line_spacing
 
     # 重置 y 坐标
-    y = (image.height - total_height) // 2
-
+    y_stroke = y
     # 绘制描边（加粗效果）
     stroke_width = 1  # 描边宽度
     for i, line in enumerate(lines):
-        # 多次绘制偏移文字，模拟描边
         for dx, dy in [(-stroke_width, 0), (stroke_width, 0), (0, -stroke_width), (0, stroke_width)]:
-            draw.text((x + dx, y + dy), line, fill=stroke_color, font=font)
-        y += line_heights[i]
+            draw.text((x + dx, y_stroke + dy), line, fill=stroke_color, font=font)
+        y_stroke += line_heights[i] + line_spacing
 
     # 重置 y 坐标
-    y = (image.height - total_height) // 2
-
+    y_text = y
     # 绘制主文字
     for i, line in enumerate(lines):
-        draw.text((x, y), line, fill=text_color, font=font)
-        y += line_heights[i]
+        draw.text((x, y_text), line, fill=text_color, font=font)
+        y_text += line_heights[i] + line_spacing
 
     return image
 
@@ -156,7 +162,7 @@ payload = {
         {
             "text": (
                 "A clean, minimalist poster-style banner with a bold, flat design featuring scattered 2D coins, pickaxes, and abstract line elements in a balanced, grid-based composition. "
-                "Use a flat, solid color background with vibrant, contrasting pure colors (e.g., light black, light silver, or light green). Emphasize clean negative space and geometric simplicity, ultra-realistic, high contrast, no cryptocurrency logos or mining rigs."
+                "Use a solid color background with vibrant, contrasting pure colors (e.g., light black, light silver, or light green). Emphasize clean negative space and geometric simplicity, ultra-realistic, high contrast, no cryptocurrency logos or mining rigs."
                 "There should be no text on the poster."
             ),
             "weight": 1
