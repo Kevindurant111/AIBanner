@@ -22,6 +22,11 @@ API_SIZE = (1536, 640)  # API 允许的尺寸
 SIZE_1 = (1536, 700)    # 第一尺寸
 SIZE_2 = (1152, 408)    # 第二尺寸（缩放生成）
 
+# LOGO 配置
+LOGO_PATH = "./LOGO.png"  # ANTPOOL LOGO 路径
+LOGO_SCALE = 1/4  # LOGO 宽度占画面 1/4
+LOGO_MARGIN = 40  # 左上角边距（像素）
+
 # 艺术字颜色
 TEXT_COLOR = (255, 165, 0)  # 橙黄色
 SHADOW_COLOR = (50, 50, 50)  # 阴影颜色（深灰）
@@ -29,7 +34,7 @@ STROKE_COLOR = (100, 100, 100)  # 描边颜色（中灰）
 
 # 艺术字文本
 TEXT_EN = "ANTPOOL\nLaunches SHIC Merged-mining"
-TEXT_CN = "ANTPOOL\n上线 SHIC 合并挖矿"  # 已确认中文文本
+TEXT_CN = "ANTPOOL\n上线 SHIC 合并挖矿"
 
 # 判断是否为中文文本
 def is_chinese(text):
@@ -162,7 +167,7 @@ payload = {
         {
             "text": (
                 "A clean, minimalist poster-style banner with a bold, flat design featuring scattered 2D coins, pickaxes, and abstract line elements in a balanced, grid-based composition. "
-                "Use a solid color background with vibrant, contrasting pure colors (e.g., light black, light silver, or light green). Emphasize clean negative space and geometric simplicity, ultra-realistic, high contrast, no cryptocurrency logos or mining rigs."
+                "Use a solid color background with vibrant, contrasting pure colors (e.g., light blue, light silver, light yellow or light white). Emphasize clean negative space and geometric simplicity, ultra-realistic, high contrast, no cryptocurrency logos or mining rigs."
                 "There should be no text on the poster."
             ),
             "weight": 1
@@ -210,6 +215,16 @@ try:
         else:
             image_1536x700 = image
 
+        # 加载 ANTPOOL LOGO
+        try:
+            logo = Image.open(LOGO_PATH).convert("RGBA")
+        except FileNotFoundError:
+            print(f"错误: 找不到 LOGO 文件 '{LOGO_PATH}'，请检查路径是否正确。")
+            logo = None
+        except Exception as e:
+            print(f"加载 LOGO 异常: {str(e)}")
+            logo = None
+
         # 生成四张图像
         for size_key, output_path in OUTPUT_PATHS.items():
             size = SIZE_1 if "1536x700" in size_key else SIZE_2
@@ -221,8 +236,22 @@ try:
             else:
                 img = image_1536x700.copy()
 
-            # 添加艺术字（加粗和立体效果）
+            # 添加艺术字
             img = add_art_text(img, text, font_size=60)
+
+            # 添加 LOGO（如果加载成功）
+            if logo:
+                # 计算 LOGO 缩放尺寸
+                logo_width = int(size[0] * LOGO_SCALE)
+                logo_height = int(logo_width * (184 / 1000))  # 等比例缩放
+                logo_resized = logo.resize((logo_width, logo_height), Image.LANCZOS)
+
+                # 左上角位置
+                logo_x = LOGO_MARGIN
+                logo_y = LOGO_MARGIN
+
+                # 确保 LOGO 是 RGBA，处理透明背景
+                img.paste(logo_resized, (logo_x, logo_y), logo_resized)
 
             # 保存图像
             img.save(output_path, "PNG")
